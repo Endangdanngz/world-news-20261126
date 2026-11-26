@@ -217,6 +217,16 @@ function main(): void {
   if (scans.length !== 1) fail(`expected exactly one SOS segment, found ${scans.length}`);
   if (sos.payload.length < 1) fail('SOS payload is empty');
 
+  // The scan must describe exactly the components the frame declared:
+  // one 2-byte entry per component, plus the 3 trailing spectral bytes.
+  const scanComponents = sos.payload[0];
+  if (scanComponents !== components) {
+    fail(`SOS lists ${scanComponents} scan component(s) but SOF0 declares ${components}`);
+  }
+  if (sos.payload.length !== 1 + 2 * scanComponents + 3) {
+    fail(`SOS payload is ${sos.payload.length} bytes, expected ${1 + 2 * scanComponents + 3} for ${scanComponents} component(s)`);
+  }
+
   // The edition stamp must ride in exactly one comment segment.
   const stamped = ledger.filter(
     (s) => s.marker === 0xfe && s.payload.toString('latin1').includes(EDITION_STAMP),
